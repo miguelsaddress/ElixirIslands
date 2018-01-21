@@ -4,39 +4,59 @@ defmodule IslandsEngine.Island do
   @enforce_keys [:coordinates, :hit_coordinates]
   defstruct [:coordinates, :hit_coordinates]
 
-  def types(), do: [:atoll, :dot, :l_shape, :s_shape, :square]
-  #  Offsets to be used for the construction of the Island
-  defp offsets(:square), do: [{0, 0}, {0, 1}, {1, 0}, {1, 1}]
-  defp offsets(:atoll), do: [{0, 0}, {0, 1}, {1, 1}, {2, 0}, {2, 1}]
-  defp offsets(:dot), do: [{0, 0}]
-  defp offsets(:l_shape), do: [{0, 0}, {1, 0}, {2, 0}, {2, 1}]
-  defp offsets(:s_shape), do: [{0, 1}, {0, 2}, {1, 0}, {1, 1}]
-  defp offsets(_), do: {:error, :invalid_island_type}
+  def types() do
+    [:atoll, :dot, :l_shape, :s_shape, :square]
+  end
 
+  #  Offsets to be used for the construction of the Island
+  defp offsets(:square) do
+    [{0, 0}, {0, 1}, {1, 0}, {1, 1}]
+  end
+
+  defp offsets(:atoll) do
+    [{0, 0}, {0, 1}, {1, 1}, {2, 0}, {2, 1}]
+  end
+
+  defp offsets(:dot) do
+    [{0, 0}]
+  end
+
+  defp offsets(:l_shape) do
+    [{0, 0}, {1, 0}, {2, 0}, {2, 1}]
+  end
+
+  defp offsets(:s_shape) do
+    [{0, 1}, {0, 2}, {1, 0}, {1, 1}]
+  end
+
+  defp offsets(_) do
+    {:error, :invalid_island_type}
+  end
 
   def new(type, %Coordinate{} = upper_left) do
     with [_h | _tail] = offsets      <- offsets(type), #offsets type exists and returns a list
          %MapSet{}    = coordinates  <- add_coordinates(offsets, upper_left) # add coordinates returns a MapSet
     do
-      {:ok, %Island{coordinates: coordinates, hit_coordinates: MapSet.new()}}
+      island = %Island{coordinates: coordinates, hit_coordinates: MapSet.new()}
+      {:ok, island}
     else
       error -> error
     end
   end
-  
+
   # Given a set of enumerable of offsets and the initial coordinate, this funciton will create
   # a set of Coordinate structs that represents the island
-  defp add_coordinates(offsets, upper_left) do 
+  defp add_coordinates(offsets, upper_left) do
     Enum.reduce_while(offsets, MapSet.new(), fn offset, acc ->
-      add_coordinate(acc, upper_left, offset) 
+      add_coordinate(acc, upper_left, offset)
     end)
   end
 
   defp add_coordinate(coordinates, %Coordinate{row: row, col: col}, {row_offset, col_offset}) do
     case Coordinate.new(row + row_offset, col + col_offset) do
-      {:ok, coordinate} -> 
+      {:ok, coordinate} ->
         {:cont, MapSet.put(coordinates, coordinate)}
-      {:error, :invalid_coordinate} -> 
+      {:error, :invalid_coordinate} ->
         {:halt, {:error, :invalid_coordinate}}
     end
   end
@@ -47,10 +67,10 @@ defmodule IslandsEngine.Island do
 
   def guess(%Island{} = island, %Coordinate{} = coordinate) do
     case MapSet.member?(island.coordinates, coordinate) do
-      true -> 
+      true ->
         island = %{island | hit_coordinates: MapSet.put(island.hit_coordinates, coordinate)}
         {:hit, island}
-      false -> 
+      false ->
         :miss
     end
   end
