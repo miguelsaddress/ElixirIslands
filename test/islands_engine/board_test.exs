@@ -87,7 +87,7 @@ defmodule IslandsEngine.BoardTest do
     {:ok, l_shape_coordinate} = Coordinate.new(4, 4)
     {:ok, l_shape} = Island.new(:l_shape, l_shape_coordinate)
 
-    {:ok, s_shape_coordinate} = Coordinate.new(7, 6)
+    {:ok, s_shape_coordinate} = Coordinate.new(8, 6)
     {:ok, s_shape} = Island.new(:s_shape, s_shape_coordinate)
 
     board =

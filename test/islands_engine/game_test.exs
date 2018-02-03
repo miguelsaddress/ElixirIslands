@@ -60,4 +60,34 @@ defmodule IslandsEngine.GameTest do
     Game.add_player(game, "Player2 name")
     assert Game.position_island(game, :player1, :wrong, 1, 1) == {:error, :invalid_island_type}
   end
+
+  test "set_islands/2 works when all islands have already been set for the player" do
+    {:ok, game} = Game.start_link("Player1 name")
+    Game.add_player(game, "Player2 name")
+    # position all islands
+    # [x][x][ ][ ][ ][ ][ ][ ][ ][ ]
+    # [x][x][ ][x][ ][ ][ ][ ][x][x]
+    # [ ][ ][ ][ ][ ][ ][ ][ ][ ][x]
+    # [ ][ ][ ][x][ ][ ][ ][ ][x][x]
+    # [ ][ ][ ][x][ ][ ][ ][ ][ ][ ]
+    # [ ][ ][ ][x][x][ ][ ][ ][ ][ ]
+    # [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+    # [ ][ ][ ][ ][ ][x][x][ ][ ][ ]
+    # [ ][ ][ ][ ][x][x][ ][ ][ ][ ]
+    # [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
+
+    Game.position_island(game, :player1, :square, 1, 1)
+    Game.position_island(game, :player1, :dot, 2, 4)
+    Game.position_island(game, :player1, :atoll, 2, 9)
+    Game.position_island(game, :player1, :l_shape, 4, 4)
+    Game.position_island(game, :player1, :s_shape, 8, 6)
+
+    assert :ok == Game.set_islands(game, :player1)
+  end
+
+  test "set_islands/2 returns :error when not all islands have already been set for the player" do
+    {:ok, game} = Game.start_link("Player1 name")
+    Game.add_player(game, "Player2 name")
+    assert {:error, :not_all_islands_positioned} == Game.set_islands(game, :player1)
+  end
 end
