@@ -35,4 +35,29 @@ defmodule IslandsEngine.GameTest do
     :error = Game.add_player(game, "Player2 name")
   end
 
+  test "position_islands/5 adds island to player's board as expected" do
+    {:ok, game} = Game.start_link("Player1 name")
+    Game.add_player(game, "Player2 name")
+    Game.position_island(game, :player1, :square, 1, 1)
+    state_data = :sys.get_state(game)
+    assert Map.has_key?(state_data.player1.board, :square)
+  end
+
+  test "position_island/5 returns {:error, :invalid_coordinate} for a coordinate out of the board" do
+    {:ok, game} = Game.start_link("Player1 name")
+    Game.add_player(game, "Player2 name")
+    assert Game.position_island(game, :player1, :dot, 12, 1) == {:error, :invalid_coordinate}
+  end
+
+  test "position_island/5 returns {:error, :invalid_coordinate} for a coordinate inside of the board but the island would exceed the board" do
+    {:ok, game} = Game.start_link("Player1 name")
+    Game.add_player(game, "Player2 name")
+    assert Game.position_island(game, :player1, :square, 10, 0) == {:error, :invalid_coordinate}
+  end
+
+  test "position_island/5 returns {:error, :invalid_island_type} for an invalid island type" do
+    {:ok, game} = Game.start_link("Player1 name")
+    Game.add_player(game, "Player2 name")
+    assert Game.position_island(game, :player1, :wrong, 1, 1) == {:error, :invalid_island_type}
+  end
 end
