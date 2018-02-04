@@ -10,7 +10,7 @@ defmodule IslandsEngine.Game do
       player2: %{name: nil,  board: Board.new(), guesses: Guesses.new()},
       rules: Rules.new()
     }
-    GenServer.start_link(__MODULE__, state)
+    GenServer.start_link(__MODULE__, state, name: via_tuple(name))
   end
 
   def add_player(game, name) when is_binary(name), do:
@@ -89,6 +89,8 @@ defmodule IslandsEngine.Game do
        {:error, :invalid_coordinate} -> {:reply, {:error, :invalid_coordinate}, state_data}
      end
   end
+
+  def via_tuple(name), do: {:via, Registry, {Registry.Game, name} }
 
   defp player_board(state_data, player), do: Map.get(state_data, player).board
   defp update_board(state_data, player, board), do:
