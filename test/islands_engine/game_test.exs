@@ -90,4 +90,70 @@ defmodule IslandsEngine.GameTest do
     Game.add_player(game, "Player2 name")
     assert {:error, :not_all_islands_positioned} == Game.set_islands(game, :player1)
   end
+
+  test "guess_coordinate/4 returns error when its not players turn" do
+    {:ok, game} = Game.start_link("Player1 name")
+    Game.add_player(game, "Player2 name")
+    # advance state to player1_turn
+    :sys.replace_state(game, fn state_data ->
+      %{state_data | rules: %Rules{state: :player1_turn}}
+    end)
+    assert Game.guess_coordinate(game, :player2, 1, 1) == :error
+  end
+
+  test "guess_coordinate/4 returns {:miss, :none, :no_win} when its a miss" do
+    {:ok, game} = Game.start_link("Player1 name")
+    Game.add_player(game, "Player2 name")
+    Game.position_island(game, :player1, :dot, 1, 1)
+    Game.position_island(game, :player2, :square, 1, 1)
+    # advance state to player1_turn
+    :sys.replace_state(game, fn state_data ->
+      %{state_data | rules: %Rules{state: :player1_turn}}
+    end)
+
+    assert Game.guess_coordinate(game, :player1, 6, 6) == {:miss, :none, :no_win}
+  end
+
+  test "guess_coordinate/4 returns {:hit, :none, :no_win} when its a hit but island is not forested" do
+    {:ok, game} = Game.start_link("Player1 name")
+    Game.add_player(game, "Player2 name")
+    Game.position_island(game, :player1, :dot, 1, 1)
+    Game.position_island(game, :player2, :square, 1, 1)
+    # advance state to player1_turn
+    :sys.replace_state(game, fn state_data ->
+      %{state_data | rules: %Rules{state: :player1_turn}}
+    end)
+
+    assert Game.guess_coordinate(game, :player1, 1, 1) == {:hit, :none, :no_win}
+  end
+
+  test "guess_coordinate/4 returns {:hit, _island_type, :no_win} when its a hit, island is forested but its not a win" do
+    {:ok, game} = Game.start_link("Player1 name")
+    Game.add_player(game, "Player2 name")
+    Game.position_island(game, :player1, :dot, 1, 1)
+    Game.position_island(game, :player1, :square, 4, 4)
+    Game.position_island(game, :player2, :square, 1, 1)
+    # advance state to player1_turn
+    :sys.replace_state(game, fn state_data ->
+      %{state_data | rules: %Rules{state: :player2_turn}}
+    end)
+
+    assert Game.guess_coordinate(game, :player2, 1, 1) == {:hit, :dot, :no_win} #square island remains
+  end
+
+  test "guess_coordinate/4 returns {:hit, _island_type, :win} when its a hit, island is forested and its a win" do
+    {:ok, game} = Game.start_link("Player1 name")
+    Game.add_player(game, "Player2 name")
+    Game.position_island(game, :player1, :dot, 1, 1)
+    Game.position_island(game, :player2, :square, 1, 1)
+    # advance state to player1_turn
+    :sys.replace_state(game, fn state_data ->
+      %{state_data | rules: %Rules{state: :player2_turn}}
+    end)
+
+    assert Game.guess_coordinate(game, :player2, 1, 1) == {:hit, :dot, :win}
+    # and state should be now :game_over because one player won
+    state_data = :sys.get_state(game)
+    assert state_data.rules.state == :game_over
+  end
 end
